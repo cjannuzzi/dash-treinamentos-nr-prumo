@@ -10,63 +10,76 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- IDENTIDADE VISUAL PRUMO (BASEADA NO FERRAMENTAS DIGITAIS) ---
-COR_PRUMO_BROWN = "#501E0A"   # Marrom Prumo (Principal - Custos)
-COR_PRUMO_ORANGE = "#Fa7828"  # Laranja Prumo (Destaque - Internos/Saving)
-COR_SAVING_GREEN = "#2A9D8F"  # Verde Petróleo (APENAS PARA O TEXTO/BULLET DE ECONOMIA)
-COR_BG_BODY = "#F8F9FA"       # Fundo Off-White
+# --- IDENTIDADE VISUAL PRUMO (Extraída do style.css) ---
+# Cores
+COR_PRUMO_BROWN = "#501E0A"   # Cor Institucional Escura (Substitui o Azul)
+COR_PRUMO_ORANGE = "#Fa7828"  # Cor de Destaque (Substitui o Ciano)
+COR_TEXT_MUTED = "#666666"    # Texto secundário
+COR_BG_BODY = "#F8F9FA"       # Fundo leve
 
 st.markdown(f"""
     <style>
+        /* Importando Fonte Montserrat */
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
         
+        /* Aplicando Fonte Globalmente */
         html, body, [class*="css"] {{
             font-family: 'Montserrat', sans-serif;
         }}
         
+        /* Fundo Geral */
         .main {{ background-color: {COR_BG_BODY}; }}
         
-        /* Sidebar Marrom */
+        /* SIDEBAR (Marrom Prumo) */
         [data-testid="stSidebar"] {{ background-color: {COR_PRUMO_BROWN}; }}
+        
+        /* Textos da Sidebar (Branco) */
         [data-testid="stSidebar"] * {{ color: #ffffff !important; }}
+        
+        /* Inputs da Sidebar (Fundo Branco, Texto Marrom) */
         [data-testid="stSidebar"] input {{ color: {COR_PRUMO_BROWN} !important; }}
         div[data-baseweb="select"] span {{ color: {COR_PRUMO_BROWN} !important; }}
         
-        /* Títulos */
+        /* Títulos (Marrom Prumo) */
         h1, h2, h3 {{ color: {COR_PRUMO_BROWN}; font-weight: 700; }}
         
-        /* CARDS KPI */
+        /* CARDS DE KPI (Estilo do style.css) */
         div[data-testid="stMetric"] {{
             background-color: #ffffff;
             padding: 20px;
-            border-radius: 8px;
-            border-left: 6px solid {COR_PRUMO_ORANGE};
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            border-radius: 8px; /* Borda arredondada suave */
+            border-left: 6px solid {COR_PRUMO_ORANGE}; /* Detalhe Laranja */
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05); /* Sombra suave do site */
             min-height: 120px;
         }}
         
+        /* Rótulo do KPI (Texto Muted) */
         div[data-testid="stMetricLabel"] {{
             font-size: 0.85rem !important;
-            color: #666666 !important;
+            color: {COR_TEXT_MUTED} !important;
             font-weight: 600;
             text-transform: uppercase;
         }}
         
+        /* Valor do KPI (Marrom Forte) */
         div[data-testid="stMetricValue"] {{
             font-size: 1.6rem !important;
             color: {COR_PRUMO_BROWN} !important;
-            font-weight: 800;
+            font-weight: 800; /* Montserrat ExtraBold */
         }}
         
+        /* Delta/Detalhe do KPI */
         div[data-testid="stMetricDelta"] {{
             font-size: 0.8rem !important;
-            color: {COR_PRUMO_ORANGE} !important;
+            color: {COR_PRUMO_ORANGE} !important; /* Laranja */
             font-weight: 500;
         }}
         div[data-testid="stMetricDelta"] svg {{ display: none; }}
 
+        /* Ajuste nas Tabelas */
         .stDataFrame {{ border: 1px solid #eeeeee; border-radius: 8px; }}
         
+        /* Tabs (Abas) */
         button[data-baseweb="tab"] {{
             font-family: 'Montserrat', sans-serif;
             font-weight: 600;
@@ -94,6 +107,7 @@ def carregar_dados_final():
             st.error("❌ Arquivo não encontrado.")
             return None
 
+    # Remove totais
     cols_proibidas = [c for c in df.columns if 'TOTAL' in str(c).upper() or 'SOMA' in str(c).upper()]
     if cols_proibidas:
         df = df.drop(columns=cols_proibidas)
@@ -106,6 +120,7 @@ def carregar_dados_final():
 
     df_melted = df.melt(id_vars=colunas_id, var_name='Treinamento', value_name='Valor_Bruto')
 
+    # Lógica Estrita
     def classificar_seguro(valor):
         if pd.isna(valor) or str(valor).strip() in ['', '-', 'nan', 'None']:
             return None, None
@@ -162,6 +177,7 @@ if df is not None:
     
     st.sidebar.divider()
     
+    # Filtros
     opt_contratante = sorted(df_global['CONTRATANTE'].astype(str).unique())
     sel_contratante = st.sidebar.multiselect("Contratante", opt_contratante, default=opt_contratante)
     df_f1 = df_global[df_global['CONTRATANTE'].isin(sel_contratante)]
@@ -195,6 +211,7 @@ if df is not None:
     nome_inv = top_inv.index[0] if not top_inv.empty else "N/A"
     val_inv = top_inv.iloc[0] if not top_inv.empty else 0
 
+    # Header
     st.title("COORDENAÇÃO DG | Dashboard QSSMA")
     st.markdown("**Gestão de Custos e Treinamentos Normativos**")
     st.divider()
@@ -202,15 +219,7 @@ if df is not None:
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Investimento Total", formatar_brl(inv_total))
     c2.metric("Total Registros", qtd_total)
-    
-    # KPI SAVING: Hack CSS para o Bullet ser Verde, mas o gráfico embaixo continuará Laranja
-    c3.metric("Realizados Internamente", qtd_interno, delta=f"Economia: {formatar_brl(saving)}")
-    st.markdown(f"""<style>
-        div[data-testid="stMetric"]:nth-child(3) div[data-testid="stMetricDelta"] {{
-            color: {COR_SAVING_GREEN} !important;
-        }}
-    </style>""", unsafe_allow_html=True)
-    
+    c3.metric("Realizados Internamente", qtd_interno, delta=f"Saving: {formatar_brl(saving)}")
     c4.metric("Maior Investidor", formatar_brl(val_inv), delta=nome_inv, delta_color="inverse")
 
     st.divider()
@@ -225,8 +234,8 @@ if df is not None:
             df_chart = df_ext.groupby('Treinamento')['Custo_Final'].sum().reset_index().sort_values('Custo_Final', ascending=True).tail(10)
             df_chart['fmt'] = df_chart['Custo_Final'].apply(formatar_brl)
             
+            # Usando Cor PRUMO BROWN
             fig = px.bar(df_chart, x='Custo_Final', y='Treinamento', orientation='h', text='fmt')
-            # COR MARROM (IDENTIDADE)
             fig.update_traces(marker_color=COR_PRUMO_BROWN, textfont_color='white')
             fig.update_layout(xaxis_title=None, yaxis_title=None, plot_bgcolor='rgba(0,0,0,0)', uniformtext_minsize=8, uniformtext_mode='hide')
             st.plotly_chart(fig, use_container_width=True)
@@ -238,11 +247,11 @@ if df is not None:
         df_pie = df_filtered['Status'].value_counts().reset_index()
         df_pie.columns = ['Status', 'Qtd']
         
-        # CORES IDENTIDADE VISUAL
+        # CORES ATUALIZADAS PARA O TEMA
         cores = {
-            'Externo (Custo)': COR_PRUMO_BROWN,   # Marrom
-            'Interno (SESMT)': COR_PRUMO_ORANGE,  # Laranja
-            'Não Aplicável (N/A)': '#D1D5DB'
+            'Externo (Custo)': COR_PRUMO_BROWN,   # Marrom Prumo
+            'Interno (SESMT)': COR_PRUMO_ORANGE,  # Laranja Prumo
+            'Não Aplicável (N/A)': '#D1D5DB'      # Cinza
         }
         fig2 = px.pie(df_pie, values='Qtd', names='Status', hole=0.6, color='Status', color_discrete_map=cores)
         st.plotly_chart(fig2, use_container_width=True)
@@ -266,7 +275,7 @@ if df is not None:
         if not df_rank_ext.empty:
             df_rank_ext['fmt'] = df_rank_ext['Custo_Final'].apply(formatar_brl)
             fig_r1 = px.bar(df_rank_ext, x='Custo_Final', y=agrupar, orientation='h', text='fmt')
-            # COR MARROM (CUSTO)
+            # Marrom Prumo para Custo
             fig_r1.update_traces(marker_color=COR_PRUMO_BROWN, textfont_color='white') 
             fig_r1.update_layout(xaxis_title=None, yaxis_title=None, plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=0,r=0,t=0,b=0))
             st.plotly_chart(fig_r1, use_container_width=True)
@@ -282,7 +291,7 @@ if df is not None:
         if not df_rank_int.empty:
             df_rank_int['fmt'] = df_rank_int['Valor_Saving'].apply(formatar_brl)
             fig_r2 = px.bar(df_rank_int, x='Valor_Saving', y=agrupar, orientation='h', text='fmt')
-            # COR LARANJA (SAVING/INTERNO) - IDENTIDADE VISUAL
+            # Laranja Prumo para Saving
             fig_r2.update_traces(marker_color=COR_PRUMO_ORANGE, textfont_color='white') 
             fig_r2.update_layout(xaxis_title=None, yaxis_title=None, plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=0,r=0,t=0,b=0))
             st.plotly_chart(fig_r2, use_container_width=True)
@@ -295,7 +304,6 @@ if df is not None:
         top_vol = df_prop.groupby(agrupar)['Qtd'].sum().sort_values(ascending=False).head(10).index
         df_prop = df_prop[df_prop[agrupar].isin(top_vol)]
         
-        # Mapa de Cores Consistente (Marrom vs Laranja)
         cores_prop = {'Externo (Custo)': COR_PRUMO_BROWN, 'Interno (SESMT)': COR_PRUMO_ORANGE}
         fig_r3 = px.bar(df_prop, x='Qtd', y=agrupar, color='Status', orientation='h', 
                         color_discrete_map=cores_prop, text='Qtd')
